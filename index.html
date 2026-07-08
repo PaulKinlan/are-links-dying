@@ -335,7 +335,7 @@ function renderVerdicts(){
     let s24='';try{s24=JSON.parse(r.y2024_ext_samples||'[]');}catch(e){}
     if(s14.length||s24.length){
       const id='ev-'+r.domain.replace(/[^a-z0-9]/g,'');
-      ev+=` <a href="#" onclick="document.getElementById('${id}').style.toggle&&document.getElementById('${id}').style.display=='none'?document.getElementById('${id}').style.display='block':document.getElementById('${id}').style.display='none';return false">links</a>`;
+      ev+=` <a href="#" onclick="document.getElementById('${id}').style.toggle&&document.getElementById('${id}').style.display=='none'?document.getElementById('${id}').style.display='block':document.getElementById('${id}').style.display='none';return false">sample URLs</a>`;
       ev+=`<div id="${id}" style="display:none;font-size:.7rem;color:var(--muted);margin-top:.3rem;padding:.3rem;border-left:2px solid var(--border)">`;
       if(s14.length){ev+='<b>2014 samples:</b> '+s14.slice(0,5).join(', ')+'<br>'}
       if(s24.length){ev+='<b>2024 samples:</b> '+s24.slice(0,5).join(', ')}
