@@ -147,7 +147,11 @@ async function initSW(){
       navigator.serviceWorker.controller?.postMessage({type:'DB_CACHE_STATUS'}, [ch.port2]);
     });
     if(cached){
-      document.getElementById('consent-status').textContent='Database already cached from a previous visit.';
+      // Already have the data — skip consent, load directly
+      document.getElementById('consent').style.display='none';
+      document.getElementById('loading').style.display='block';
+      document.getElementById('loading').textContent='Loading cached data…';
+      loadDatabase();
     }
   } catch(e){ console.warn('SW failed:', e); }
 }
@@ -158,10 +162,8 @@ async function init(){
   await initSW();
 }
 
-document.getElementById('consent-yes').addEventListener('click', async () => {
-  document.getElementById('consent').style.display='none';
+async function loadDatabase(){
   const loading = document.getElementById('loading');
-  loading.style.display='block';
   try {
     loading.textContent = 'Loading SQLite engine…';
     const SQL = await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
@@ -186,6 +188,13 @@ document.getElementById('consent-yes').addEventListener('click', async () => {
     loading.style.color = 'var(--bad)';
     console.error('init error:', e);
   }
+}
+
+document.getElementById('consent-yes').addEventListener('click', async () => {
+  document.getElementById('consent').style.display='none';
+  const loading = document.getElementById('loading');
+  loading.style.display='block';
+  await loadDatabase();
 });
 
 document.getElementById('consent-no').addEventListener('click', () => {
