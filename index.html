@@ -37,7 +37,7 @@ input{flex:1;min-width:120px}
 .chart-explain{font-size:.7rem;color:var(--muted);line-height:1.4;margin-bottom:.4rem}
 .chart-canvas-wrap{flex:1;min-height:0;position:relative}
 .chart-canvas-wrap canvas{position:absolute;inset:0}
-@media(min-width:768px){.charts{grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem}.chart-box{padding:1rem;height:380px}.body{padding:1.5rem}}
+@media(min-width:768px){.charts{grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem}.chart-box{padding:1rem;height:380px}.body{padding:1.5rem}.tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.table-section{min-width:0}}
 </style>
 </head>
 <body>
@@ -88,6 +88,8 @@ input{flex:1;min-width:120px}
     <th>Evidence</th>
   </tr></thead><tbody id="v-tbody"></tbody></table></div>
 
+  <div class="tables-grid">
+  <div class="table-section">
   <div class="section-title">Browse domains (CC WAT scale study)</div>
   <div class="controls">
     <input id="search" type="text" placeholder="Search domain…">
@@ -107,7 +109,10 @@ input{flex:1;min-width:120px}
   </div>
 </div>
 
-  <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
+  </div>
+
+  <div class="table-section">
+  <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div></div>
   <div class="controls">
     <input id="yoy-search" type="text" placeholder="Search domain…">
     <select id="yoy-sort"><option value="delta">Biggest decline</option><option value="delta-asc">Biggest increase</option><option value="domain">Domain A-Z</option></select>
@@ -120,6 +125,9 @@ input{flex:1;min-width:120px}
     <span id="yoy-page-info"></span>
     <button id="yoy-next">Next →</button>
   </div>
+
+  </div>
+  </div><!-- /tables-grid -->
 
 <div style="text-align:center;font-size:.7rem;color:var(--muted);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
   Data version: <span id="data-version">v1</span> · 
