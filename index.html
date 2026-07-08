@@ -31,7 +31,8 @@ input{flex:1;min-width:200px}
 .loading{padding:2rem;text-align:center;color:var(--muted)}
 .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:1.5rem 0 .5rem}
 .bar{display:inline-block;height:3px;border-radius:2px;background:var(--accent);vertical-align:middle;margin-right:.3rem}
-a{color:var(--accent)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem;margin-bottom:2rem}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem;min-height:280px;position:relative}
 </style>
 </head>
 <body>
@@ -41,6 +42,10 @@ a{color:var(--accent)}
 <div id="loading" class="loading">Loading database (13MB)…</div>
 <div id="app" style="display:none">
   <div class="cards" id="cards"></div>
+  <div class="charts" id="charts">
+    <div class="chart-box"><div class="section-title">Median External Link %</div><canvas id="chart-trend"></canvas></div>
+    <div class="chart-box"><div class="section-title">External Link Distribution</div><canvas id="chart-hist"></canvas></div>
+  </div>
   <div class="section-title">Browse domains (CC WAT scale study)</div>
   <div class="controls">
     <input id="search" type="text" placeholder="Search domain…">
@@ -61,6 +66,7 @@ a{color:var(--accent)}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 let db, page=0, perPage=50, sortCol='ext_pct', sortDir='desc';
 
@@ -74,6 +80,7 @@ async function init(){
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='block';
   renderCards();
+  renderCharts();
   renderTable();
 }
 
@@ -113,6 +120,35 @@ function renderCards(){
     html+='</div>';
   }
   document.getElementById('cards').innerHTML=html;
+}
+
+function renderCharts(){
+  const years=[2014,2020,2024];
+  const colors=['#4b3aff','#e6a700','#1a8a3a'];
+  const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)';
+  const textColor=isDark?'#9aa0a6':'#666';
+  Chart.defaults.color=textColor;
+  Chart.defaults.borderColor=gridColor;
+
+  // Trend bar chart
+  const trendData=years.map(yr=>{const rows=q('SELECT ext_pct,genuine_ext_pct FROM cc_wat WHERE year=?',[yr]);return {ext:median(rows.map(r=>r.ext_pct)),gen:median(rows.map(r=>r.genuine_ext_pct))};});
+  new Chart(document.getElementById('chart-trend'),{type:'bar',data:{labels:years.map(String),datasets:[
+    {label:'Raw ext%',data:trendData.map(d=>d.ext),backgroundColor:colors[0]+'aa',borderColor:colors[0],borderWidth:1,borderRadius:4},
+    {label:'Genuine ext% (excl same-org)',data:trendData.map(d=>d.gen),backgroundColor:colors[1]+'aa',borderColor:colors[1],borderWidth:1,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:gridColor}},x:{grid:{display:false}}}}});
+
+  // Histogram (distribution of ext%)
+  const bins=[0,5,10,15,20,30,40,50,75,100];
+  const binLabels=['0-5%','5-10%','10-15%','15-20%','20-30%','30-40%','40-50%','50-75%','75-100%'];
+  const histData=years.map((yr,i)=>{
+    const rows=q('SELECT ext_pct FROM cc_wat WHERE year=?',[yr]);
+    const counts=Array(bins.length-1).fill(0);
+    for(const r of rows){for(let b=0;b<bins.length-1;b++){if(r.ext_pct>=bins[b]&&(b===bins.length-2||r.ext_pct<bins[b+1])){counts[b]++;break;}}}
+    const total=rows.length;
+    return counts.map(c=> +(c/total*100).toFixed(1)); // percentage of domains
+  });
+  new Chart(document.getElementById('chart-hist'),{type:'bar',data:{labels:binLabels,datasets:years.map((yr,i)=>({label:String(yr),data:histData[i],backgroundColor:colors[i]+'88',borderColor:colors[i],borderWidth:1,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:gridColor}},x:{grid:{display:false}}}}});
 }
 
 function renderTable(){
