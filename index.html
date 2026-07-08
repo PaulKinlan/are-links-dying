@@ -72,6 +72,22 @@ input{flex:1;min-width:120px}
     <div class="chart-box"><div class="section-title">Median External Link Percentage</div><div class="chart-explain">What % of links on a typical page point to a <b>different website</b>. Lower = fewer external links = more insular. Purple = all external links. Amber = excluding same-organisation links (e.g. bbc.com linking to bbc.co.uk counts as external but is the same org).</div><div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div></div>
     <div class="chart-box"><div class="section-title">Distribution of External Link Percentage</div><div class="chart-explain">What % of <b>all sites</b> fall into each bucket. Each bar = the share of sites whose external-link ratio is in that range. Purple = 2014, Amber = 2020, Green = 2024. The left-shift over time means more sites now have fewer external links.</div><div class="chart-canvas-wrap"><canvas id="chart-hist"></canvas></div></div>
   </div>
+  <div class="section-title">Per-site verdicts (170 sites, detailed analysis)</div>
+  <div class="controls">
+    <input id="v-search" type="text" placeholder="Search site…">
+    <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
+  </div>
+  <div class="table-wrap"><table id="v-table"><thead><tr>
+    <th data-vcol="domain">Site</th>
+    <th data-vcol="y2014_ext_pct" class="num" style="text-align:right">2014<br>ext%</th>
+    <th data-vcol="y2024_ext_pct" class="num" style="text-align:right">2024<br>ext%</th>
+    <th data-vcol="delta" class="num" style="text-align:right">Δ</th>
+    <th data-vcol="y2014_total" class="num" style="text-align:right">2014<br>ext/total</th>
+    <th data-vcol="y2024_total" class="num" style="text-align:right">2024<br>ext/total</th>
+    <th data-vcol="verdict">Verdict</th>
+    <th>Evidence</th>
+  </tr></thead><tbody id="v-tbody"></tbody></table></div>
+
   <div class="section-title">Browse domains (CC WAT scale study)</div>
   <div class="controls">
     <input id="search" type="text" placeholder="Search domain…">
@@ -90,22 +106,6 @@ input{flex:1;min-width:120px}
     <button id="next">Next →</button>
   </div>
 </div>
-
-  <div class="section-title">Per-site verdicts (170 sites, detailed analysis)</div>
-  <div class="controls">
-    <input id="v-search" type="text" placeholder="Search site…">
-    <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
-  </div>
-  <div class="table-wrap"><table id="v-table"><thead><tr>
-    <th data-vcol="domain">Site</th>
-    <th data-vcol="y2014_ext_pct" class="num" style="text-align:right">2014<br>ext%</th>
-    <th data-vcol="y2024_ext_pct" class="num" style="text-align:right">2024<br>ext%</th>
-    <th data-vcol="delta" class="num" style="text-align:right">Δ</th>
-    <th data-vcol="y2014_total" class="num" style="text-align:right">2014<br>ext/total</th>
-    <th data-vcol="y2024_total" class="num" style="text-align:right">2024<br>ext/total</th>
-    <th data-vcol="verdict">Verdict</th>
-    <th>Evidence</th>
-  </tr></thead><tbody id="v-tbody"></tbody></table></div>
 
   <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
   <div class="controls">
