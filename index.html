@@ -77,6 +77,15 @@ input{flex:1;min-width:120px}
     <th data-col="genuine_ext_pct" class="num">External (excl. same org)</th>
   </tr></thead><tbody id="tbody"></tbody></table></div>
 
+  <div class="section-title">Per-site verdicts (170 sites, detailed analysis)</div>
+  <div class="controls">
+    <input id="v-search" type="text" placeholder="Search site…">
+    <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
+  </div>
+  <div class="table-wrap"><table id="v-table"><thead><tr>
+    <th>Site</th><th class="num">2014 external</th><th class="num">2024 external</th><th class="num">Change</th><th>Verdict</th><th>Evidence</th>
+  </tr></thead><tbody id="v-tbody"></tbody></table></div>
+
   <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
   <div class="controls">
     <input id="yoy-search" type="text" placeholder="Search domain…">
@@ -109,6 +118,7 @@ async function init(){
   renderCards();
   renderCharts();
   renderTable();
+  renderVerdicts();
   renderYoY();
 }
 
@@ -220,6 +230,43 @@ document.querySelectorAll('th[data-col]').forEach(th=>{
 });
 
 document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
+
+// ── Verdicts ──
+function renderVerdicts(){
+  const search=document.getElementById('v-search').value;
+  const filt=document.getElementById('v-filter').value;
+  let where=[];let params=[];
+  if(search){where.push('domain LIKE ?');params.push('%'+search+'%');}
+  if(filt){where.push('verdict LIKE ?');params.push('%'+filt+'%');}
+  const wc=where.length?'WHERE '+where.join(' AND '):'';
+  const rows=q(`SELECT * FROM verdicts ${wc} ORDER BY delta ASC NULLS LAST`);
+  let html='';
+  for(const r of rows){
+    const e14=r.y2014_ext_pct!==null?r.y2014_ext_pct+'%':'—';
+    const e24=r.y2024_ext_pct!==null?r.y2024_ext_pct+'%':'—';
+    const d=r.delta!==null?(r.delta>0?'+':'')+r.delta+'pp':'';
+    const dc=r.delta<0?'bad':r.delta>0?'good':'';
+    // Evidence links
+    let ev='';
+    if(r.wayback_2014)ev+=`<a href="${r.wayback_2014}" target="_blank">2014</a> `;
+    if(r.wayback_2024)ev+=`<a href="${r.wayback_2024}" target="_blank">2024</a>`;
+    // Expandable samples
+    let s14='';try{s14=JSON.parse(r.y2014_ext_samples||'[]');}catch(e){}
+    let s24='';try{s24=JSON.parse(r.y2024_ext_samples||'[]');}catch(e){}
+    if(s14.length||s24.length){
+      const id='ev-'+r.domain.replace(/[^a-z0-9]/g,'');
+      ev+=` <a href="#" onclick="document.getElementById('${id}').style.toggle&&document.getElementById('${id}').style.display=='none'?document.getElementById('${id}').style.display='block':document.getElementById('${id}').style.display='none';return false">links</a>`;
+      ev+=`<div id="${id}" style="display:none;font-size:.7rem;color:var(--muted);margin-top:.3rem;padding:.3rem;border-left:2px solid var(--border)">`;
+      if(s14.length){ev+='<b>2014 samples:</b> '+s14.slice(0,5).join(', ')+'<br>'}
+      if(s24.length){ev+='<b>2024 samples:</b> '+s24.slice(0,5).join(', ')}
+      ev+='</div>';
+    }
+    html+=`<tr><td>${r.domain}</td><td class="num">${e14}</td><td class="num">${e24}</td><td class="num ${dc}">${d}</td><td>${r.verdict}</td><td style="font-size:.7rem">${ev}</td></tr>`;
+  }
+  document.getElementById('v-tbody').innerHTML=html;
+}
+document.getElementById('v-search').addEventListener('input',()=>renderVerdicts());
+document.getElementById('v-filter').addEventListener('change',()=>renderVerdicts());
 
 init().catch(e=>{document.getElementById('loading').textContent='Error loading database: '+e.message;});
 
