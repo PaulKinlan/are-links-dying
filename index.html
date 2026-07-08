@@ -139,19 +139,35 @@ const DB_VERSION='v1'; // bump when DB content changes
 async function initSW(){
   if(!('serviceWorker' in navigator)) return;
   try {
-    await navigator.serviceWorker.register('sw.js');
-    // Check if DB is already cached
-    const cached = await new Promise(resolve => {
-      const ch = new MessageChannel();
-      ch.port1.onmessage = e => resolve(e.data.cached);
-      navigator.serviceWorker.controller?.postMessage({type:'DB_CACHE_STATUS'}, [ch.port2]);
-    });
-    if(cached){
-      // Already have the data — skip consent, load directly
-      document.getElementById('consent').style.display='none';
-      document.getElementById('loading').style.display='block';
-      document.getElementById('loading').textContent='Loading cached data…';
-      loadDatabase();
+    const reg = await navigator.serviceWorker.register('sw.js');
+    // Wait for the SW to be active
+    if(reg.active && navigator.serviceWorker.controller){
+      // SW is controlling this page — check cache
+      const cached = await new Promise(resolve => {
+        const ch = new MessageChannel();
+        ch.port1.onmessage = e => resolve(e.data.cached);
+        navigator.serviceWorker.controller.postMessage({type:'DB_CACHE_STATUS'}, [ch.port2]);
+        setTimeout(()=>resolve(false), 2000); // timeout fallback
+      });
+      if(cached){
+        document.getElementById('consent').style.display='none';
+        document.getElementById('loading').style.display='block';
+        document.getElementById('loading').textContent='Loading cached data…';
+        await loadDatabase();
+        return;
+      }
+    }
+    // Also check Cache API directly (works even if SW just registered)
+    if('caches' in window){
+      const cache = await caches.open('are-links-dying-db-v1');
+      const match = await cache.match('link-study.db');
+      if(match){
+        document.getElementById('consent').style.display='none';
+        document.getElementById('loading').style.display='block';
+        document.getElementById('loading').textContent='Loading cached data…';
+        await loadDatabase();
+        return;
+      }
     }
   } catch(e){ console.warn('SW failed:', e); }
 }
