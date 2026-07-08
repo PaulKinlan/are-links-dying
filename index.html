@@ -201,6 +201,7 @@ async function loadDatabase(){
     loading.style.display='none';
     document.getElementById('app').style.display='block';
     setTimeout(()=>{
+      loadState();
       renderCards();
       renderCharts();
       renderTable();
@@ -341,6 +342,44 @@ document.querySelectorAll('th[data-col]').forEach(th=>{
     renderTable();
   });
 });
+
+// ── URL state sync ──
+function saveState(){
+  const p=new URLSearchParams();
+  p.set('bs',document.getElementById('search').value);
+  p.set('by',document.getElementById('year-filter').value);
+  p.set('be',document.getElementById('min-ext').value);
+  p.set('bp',String(page));
+  p.set('bc',sortCol);p.set('bd',sortDir);
+  p.set('vs',document.getElementById('v-search').value);
+  p.set('vf',document.getElementById('v-filter').value);
+  p.set('vc',vSortCol);p.set('vd',vSortDir);
+  p.set('ys',document.getElementById('yoy-search').value);
+  p.set('yo',document.getElementById('yoy-sort').value);
+  p.set('yp',String(yoyPage));
+  history.replaceState(null,'','#'+p.toString());
+}
+function loadState(){
+  const h=location.hash.slice(1);if(!h)return;
+  const p=new URLSearchParams(h);
+  document.getElementById('search').value=p.get('bs')||'';
+  document.getElementById('year-filter').value=p.get('by')||'';
+  document.getElementById('min-ext').value=p.get('be')||'0';
+  page=parseInt(p.get('bp'))||0;
+  sortCol=p.get('bc')||'ext_pct';sortDir=p.get('bd')||'desc';
+  document.getElementById('v-search').value=p.get('vs')||'';
+  document.getElementById('v-filter').value=p.get('vf')||'';
+  vSortCol=p.get('vc')||'delta';vSortDir=p.get('vd')||'ASC';
+  document.getElementById('yoy-search').value=p.get('ys')||'';
+  document.getElementById('yoy-sort').value=p.get('yo')||'delta';
+  yoyPage=parseInt(p.get('yp'))||0;
+}
+
+// Wrap render functions to also save state
+const _rt=renderTable,_rv=renderVerdicts,_ry=renderYoY;
+renderTable=function(){_rt();saveState();};
+renderVerdicts=function(){_rv();saveState();};
+renderYoY=function(){_ry();saveState();};
 
 document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
 
