@@ -97,7 +97,14 @@ input{flex:1;min-width:120px}
     <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
   </div>
   <div class="table-wrap"><table id="v-table"><thead><tr>
-    <th>Site</th><th class="num">2014 external</th><th class="num">2024 external</th><th class="num">Change</th><th class="num">2014 links (ext/total)</th><th class="num">2024 links (ext/total)</th><th>Verdict</th><th>Evidence</th>
+    <th>Site</th>
+    <th class="num">2014<br>ext%</th>
+    <th class="num">2024<br>ext%</th>
+    <th class="num">Δ</th>
+    <th class="num">2014<br>ext/total</th>
+    <th class="num">2024<br>ext/total</th>
+    <th>Verdict</th>
+    <th>Evidence</th>
   </tr></thead><tbody id="v-tbody"></tbody></table></div>
 
   <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
@@ -324,8 +331,10 @@ function renderVerdicts(){
     // Simpler: ext count = round(total * pct/100)
     const ext14=r.y2014_total!==null&&r.y2014_ext_pct!==null?Math.round(r.y2014_total*r.y2014_ext_pct/100):null;
     const ext24=r.y2024_total!==null&&r.y2024_ext_pct!==null?Math.round(r.y2024_total*r.y2024_ext_pct/100):null;
-    const lk14=ext14!==null?ext14+'/'+r.y2014_total:'—';
-    const lk24=ext24!==null?ext24+'/'+r.y2024_total:'—';
+    const int14=r.y2014_total!==null&&ext14!==null?r.y2014_total-ext14:null;
+    const int24=r.y2024_total!==null&&ext24!==null?r.y2024_total-ext24:null;
+    const lk14=ext14!==null?ext14+' ext / '+int14+' int<br><span style="font-size:.65rem;color:var(--muted)">'+r.y2014_total+' total</span>':'—';
+    const lk24=ext24!==null?ext24+' ext / '+int24+' int<br><span style="font-size:.65rem;color:var(--muted)">'+r.y2024_total+' total</span>':'—';
     // Evidence links
     let ev='';
     if(r.wayback_2014)ev+=`<a href="${r.wayback_2014}" target="_blank">2014</a> `;
