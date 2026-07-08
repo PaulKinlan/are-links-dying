@@ -8,31 +8,33 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{color-scheme:light dark;--bg:#fafafa;--card:#fff;--border:#e0e0e0;--text:#1a1a1a;--muted:#666;--accent:#4b3aff;--good:#1a8a3a;--bad:#c0392b;--warn:#e6a700}
 @media(prefers-color-scheme:dark){:root{--bg:#14161a;--card:#1c1f25;--border:#2c3036;--text:#e6e6e6;--muted:#9aa0a6;--accent:#8ab4f8;--good:#57c97a;--bad:#e06c75;--warn:#d9a441}}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:1.5rem;line-height:1.5}
-h1{font-size:1.5rem;margin-bottom:.3rem}
-.sub{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem}
-.card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.3rem}
-.card .value{font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums}
-.card .delta{font-size:.75rem;margin-top:.2rem}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:1rem;line-height:1.5}
+h1{font-size:1.3rem;margin-bottom:.3rem}
+.sub{color:var(--muted);font-size:.8rem;margin-bottom:1rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:.6rem;padding:.75rem}
+.card .label{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.2rem}
+.card .value{font-size:1.4rem;font-weight:800;font-variant-numeric:tabular-nums}
+.card .delta{font-size:.7rem;margin-top:.1rem}
 .delta.bad{color:var(--bad)}.delta.good{color:var(--good)}
-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:.5rem;overflow:hidden}
-th,td{padding:.5rem .75rem;text-align:left;font-size:.8rem;border-bottom:1px solid var(--border)}
-th{background:var(--bg);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:pointer}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:400px;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:.5rem;overflow:hidden}
+th,td{padding:.4rem .6rem;text-align:left;font-size:.75rem;border-bottom:1px solid var(--border);white-space:nowrap}
+th{background:var(--bg);font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:pointer}
 th:hover{color:var(--accent)}
 td.num{font-variant-numeric:tabular-nums;text-align:right}
-.controls{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
-input,select{font:inherit;padding:.4rem .6rem;border:1px solid var(--border);border-radius:.4rem;background:var(--card);color:var(--text)}
-input{flex:1;min-width:200px}
+.controls{display:flex;gap:.4rem;margin-bottom:.75rem;flex-wrap:wrap}
+input,select{font:inherit;padding:.35rem .5rem;border:1px solid var(--border);border-radius:.35rem;background:var(--card);color:var(--text);font-size:.8rem}
+input{flex:1;min-width:120px}
 .pager{display:flex;gap:.5rem;align-items:center;margin-top:.5rem;font-size:.8rem;color:var(--muted)}
 .pager button{padding:.2rem .6rem;border:1px solid var(--border);border-radius:.3rem;background:var(--card);color:var(--text);cursor:pointer}
 .pager button:disabled{opacity:.4;cursor:default}
 .loading{padding:2rem;text-align:center;color:var(--muted)}
 .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:1.5rem 0 .5rem}
 .bar{display:inline-block;height:3px;border-radius:2px;background:var(--accent);vertical-align:middle;margin-right:.3rem}
-.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem;margin-bottom:2rem}
-.chart-box{background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1rem;min-height:280px;position:relative}
+.charts{display:grid;grid-template-columns:1fr;gap:.6rem;margin-bottom:1rem}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:.6rem;padding:.6rem;min-height:220px;position:relative}
+@media(min-width:768px){.charts{grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem}.chart-box{padding:1rem;min-height:280px}.body{padding:1.5rem}}
 </style>
 </head>
 <body>
@@ -52,12 +54,12 @@ input{flex:1;min-width:200px}
     <select id="year-filter"><option value="">All years</option><option value="2014">2014</option><option value="2020">2020</option><option value="2024">2024</option></select>
     <select id="min-ext"><option value="0">All ext%</option><option value="20">≥20%</option><option value="50">≥50%</option></select>
   </div>
-  <table id="table"><thead><tr>
+  <div class="table-wrap"><table id="table"><thead><tr>
     <th data-col="domain">Domain</th><th data-col="year">Year</th>
     <th data-col="total_links" class="num">Links</th>
     <th data-col="ext_pct" class="num">Ext%</th>
     <th data-col="genuine_ext_pct" class="num">Genuine Ext%</th>
-  </tr></thead><tbody id="tbody"></tbody></table>
+  </tr></thead><tbody id="tbody"></tbody></table></div>
   <div class="pager">
     <button id="prev">← Prev</button>
     <span id="page-info"></span>
