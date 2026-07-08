@@ -97,13 +97,13 @@ input{flex:1;min-width:120px}
     <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
   </div>
   <div class="table-wrap"><table id="v-table"><thead><tr>
-    <th>Site</th>
-    <th class="num">2014<br>ext%</th>
-    <th class="num">2024<br>ext%</th>
-    <th class="num">Δ</th>
-    <th class="num">2014<br>ext/total</th>
-    <th class="num">2024<br>ext/total</th>
-    <th>Verdict</th>
+    <th data-vcol="domain">Site</th>
+    <th data-vcol="y2014_ext_pct" class="num">2014<br>ext%</th>
+    <th data-vcol="y2024_ext_pct" class="num">2024<br>ext%</th>
+    <th data-vcol="delta" class="num">Δ</th>
+    <th data-vcol="y2014_total" class="num">2014<br>ext/total</th>
+    <th data-vcol="y2024_total" class="num">2024<br>ext/total</th>
+    <th data-vcol="verdict">Verdict</th>
     <th>Evidence</th>
   </tr></thead><tbody id="v-tbody"></tbody></table></div>
 
@@ -321,6 +321,7 @@ document.querySelectorAll('th[data-col]').forEach(th=>{
 document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
 
 // ── Verdicts ──
+let vSortCol='delta', vSortDir='ASC';
 function renderVerdicts(){
   const search=document.getElementById('v-search').value;
   const filt=document.getElementById('v-filter').value;
@@ -328,7 +329,8 @@ function renderVerdicts(){
   if(search){where.push('domain LIKE ?');params.push('%'+search+'%');}
   if(filt){where.push('verdict LIKE ?');params.push('%'+filt+'%');}
   const wc=where.length?'WHERE '+where.join(' AND '):'';
-  const rows=q(`SELECT * FROM verdicts ${wc} ORDER BY delta ASC NULLS LAST`);
+  const safeCol={'domain':'domain','y2014_ext_pct':'y2014_ext_pct','y2024_ext_pct':'y2024_ext_pct','delta':'delta','y2014_total':'y2014_total','y2024_total':'y2024_total','verdict':'verdict'}[vSortCol]||'delta';
+  const rows=q(`SELECT * FROM verdicts ${wc} ORDER BY ${safeCol} ${vSortDir} NULLS LAST`);
   let html='';
   for(const r of rows){
     const e14=r.y2014_ext_pct!==null?r.y2014_ext_pct+'%':'—';
@@ -365,6 +367,15 @@ function renderVerdicts(){
 }
 document.getElementById('v-search').addEventListener('input',()=>renderVerdicts());
 document.getElementById('v-filter').addEventListener('change',()=>renderVerdicts());
+document.querySelectorAll('th[data-vcol]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const col=th.dataset.vcol;
+    if(vSortCol===col) vSortDir=vSortDir==='ASC'?'DESC':'ASC';
+    else{vSortCol=col;vSortDir='ASC';}
+    renderVerdicts();
+  });
+  th.style.cursor='pointer';
+});
 
 init();
 
