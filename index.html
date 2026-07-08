@@ -108,19 +108,28 @@ input{flex:1;min-width:120px}
 let db, page=0, perPage=50, sortCol='ext_pct', sortDir='desc';
 
 async function init(){
-  const SQL = await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
-  const resp = await fetch('link-study.db');
-  const buf = await resp.arrayBuffer();
-  // Decompress gzip if needed
-  let dbData = buf;
-  db = new SQL.Database(new Uint8Array(dbData));
-  document.getElementById('loading').style.display='none';
-  document.getElementById('app').style.display='block';
-  renderCards();
-  renderCharts();
-  renderTable();
-  renderVerdicts();
-  renderYoY();
+  try {
+    document.getElementById('loading').textContent = 'Loading SQLite engine…';
+    const SQL = await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
+    document.getElementById('loading').textContent = 'Loading database (14MB)…';
+    const resp = await fetch('link-study.db');
+    if(!resp.ok) throw new Error('DB fetch failed: HTTP '+resp.status);
+    const buf = await resp.arrayBuffer();
+    document.getElementById('loading').textContent = 'Parsing database…';
+    db = new SQL.Database(new Uint8Array(buf));
+    document.getElementById('loading').textContent = 'Rendering…';
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+    renderCards();
+    renderCharts();
+    renderTable();
+    renderVerdicts();
+    renderYoY();
+  } catch(e) {
+    document.getElementById('loading').textContent = 'Error: ' + e.message + ' (check console for details)';
+    document.getElementById('loading').style.color = 'var(--bad)';
+    console.error('init error:', e);
+  }
 }
 
 function q(sql, params=[]){
@@ -269,7 +278,7 @@ function renderVerdicts(){
 document.getElementById('v-search').addEventListener('input',()=>renderVerdicts());
 document.getElementById('v-filter').addEventListener('change',()=>renderVerdicts());
 
-init().catch(e=>{document.getElementById('loading').textContent='Error loading database: '+e.message;});
+init().catch(e=>{document.getElementById('loading').textContent='Fatal: '+e.message;console.error('fatal:',e);});
 
 // ── Y/Y comparison ──
 let yoyPage=0, yoyPerPage=50;
