@@ -72,7 +72,7 @@ input{flex:1;min-width:120px}
     <div class="chart-box"><div class="section-title">Median External Link Percentage</div><div class="chart-explain">What % of links on a typical page point to a <b>different website</b>. Lower = fewer external links = more insular. Purple = all external links. Amber = excluding same-organisation links (e.g. bbc.com linking to bbc.co.uk counts as external but is the same org).</div><div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div></div>
     <div class="chart-box"><div class="section-title">Distribution of External Link Percentage</div><div class="chart-explain">What % of <b>all sites</b> fall into each bucket. Each bar = the share of sites whose external-link ratio is in that range. Purple = 2014, Amber = 2020, Green = 2024. The left-shift over time means more sites now have fewer external links.</div><div class="chart-canvas-wrap"><canvas id="chart-hist"></canvas></div></div>
   </div>
-  <div class="section-title">Per-site verdicts (170 sites, detailed analysis)</div>
+  <div class="section-title">Per-site verdicts (170 sites, detailed analysis) <a href="#" id="share-v" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
   <div class="controls">
     <input id="v-search" type="text" placeholder="Search site…">
     <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
@@ -90,7 +90,7 @@ input{flex:1;min-width:120px}
 
   <div class="tables-grid">
   <div class="table-section">
-  <div class="section-title">Browse domains (CC WAT scale study)</div>
+  <div class="section-title">Browse domains (CC WAT scale study) <a href="#" id="share-b" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
   <div class="controls">
     <input id="search" type="text" placeholder="Search domain…">
     <select id="year-filter"><option value="">All years</option><option value="2014">2014</option><option value="2020">2020</option><option value="2024">2024</option></select>
@@ -112,7 +112,7 @@ input{flex:1;min-width:120px}
   </div>
 
   <div class="table-section">
-  <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div></div>
+  <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024) <a href="#" id="share-y" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div></div>
   <div class="controls">
     <input id="yoy-search" type="text" placeholder="Search domain…">
     <select id="yoy-sort"><option value="delta">Biggest decline</option><option value="delta-asc">Biggest increase</option><option value="domain">Domain A-Z</option></select>
@@ -380,6 +380,12 @@ const _rt=renderTable,_rv=renderVerdicts,_ry=renderYoY;
 renderTable=function(){_rt();saveState();};
 renderVerdicts=function(){_rv();saveState();};
 renderYoY=function(){_ry();saveState();};
+
+// Share buttons
+function shareView(e){e.preventDefault();saveState();const url=location.href;navigator.clipboard.writeText(url).then(()=>{const t=e.target;const orig=t.textContent;t.textContent='✓ Copied!';setTimeout(()=>t.textContent=orig,1500);}).catch(()=>{prompt('Copy this URL:',url);});}
+document.getElementById('share-v')?.addEventListener('click',shareView);
+document.getElementById('share-b')?.addEventListener('click',shareView);
+document.getElementById('share-y')?.addEventListener('click',shareView);
 
 document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
 
