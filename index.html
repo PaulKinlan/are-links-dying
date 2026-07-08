@@ -43,6 +43,20 @@ input{flex:1;min-width:120px}
 <h1>Are Links Dying?</h1>
 <p class="sub">External link ratios across the web, 2014 → 2020 → 2024. Data: Common Crawl WAT (306K domains) + Wayback Machine deep-dive (170 domains). <a href="#" id="about-link">About</a></p>
 
+<div id="about-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;padding:1rem" onclick="if(event.target===this)this.style.display='none'">
+  <div style="max-width:500px;margin:auto;background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:2rem">
+    <h2 style="font-size:1.1rem;margin-bottom:.5rem">About this study</h2>
+    <p style="font-size:.8rem;color:var(--muted);line-height:1.6">
+      <b>Data sources:</b> Common Crawl WAT files (306K domain-year pairs across 2014, 2020, 2024) + Wayback Machine deep-dive (170 curated domains with per-domain link analysis).<br><br>
+      <b>Method:</b> For each page, all <code>&lt;a href&gt;</code> links in the raw HTML are classified as internal (same registrable domain) or external (different domain). External links are further split into social media (Twitter, Facebook, etc.) and genuine editorial links (excluding same-organisation cross-domain links like bbc.com ↔ bbc.co.uk). Domain classification uses the Public Suffix List (tldextract).<br><br>
+      <b>SPA detection:</b> Pages with <300 characters of visible text in the raw HTML are flagged as potential JavaScript-rendered shells (links may exist but are invisible to crawlers).<br><br>
+      <b>Limitations:</b> CC WAT captures are point-in-time snapshots; results may vary by capture date. The random sample does not cover all websites. JS-rendered pages are underrepresented in link counts.<br><br>
+      <b>Code &amp; data:</b> <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">GitHub</a> · <a href="https://paulkinlan.me" target="_blank">paulkinlan.me</a>
+    </p>
+    <button onclick="document.getElementById('about-modal').style.display='none'" style="margin-top:1rem;padding:.4rem 1rem;border:1px solid var(--border);border-radius:.4rem;background:var(--card);color:var(--text);cursor:pointer;font:inherit">Close</button>
+  </div>
+</div>
+
 <div id="loading" class="loading">Loading database (13MB)…</div>
 <div id="app" style="display:none">
   <div class="cards" id="cards"></div>
@@ -204,6 +218,8 @@ document.querySelectorAll('th[data-col]').forEach(th=>{
     renderTable();
   });
 });
+
+document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
 
 init().catch(e=>{document.getElementById('loading').textContent='Error loading database: '+e.message;});
 
