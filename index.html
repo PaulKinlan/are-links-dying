@@ -41,7 +41,7 @@ input{flex:1;min-width:120px}
 </head>
 <body>
 <h1>Are Links Dying?</h1>
-<p class="sub">External link ratios across the web, 2014 → 2020 → 2024. Data: Common Crawl WAT (306K domains) + Wayback Machine deep-dive (170 domains). <a href="#" id="about-link">About</a></p>
+<p class="sub">External link ratios across the web, 2014 → 2020 → 2024. Data: Common Crawl (306K sites) + detailed per-site analysis (170 sites, via web archive). <a href="#" id="about-link">About</a></p>
 
 <div id="about-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;padding:1rem" onclick="if(event.target===this)this.style.display='none'">
   <div style="max-width:500px;margin:auto;background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:2rem">
@@ -61,20 +61,20 @@ input{flex:1;min-width:120px}
 <div id="app" style="display:none">
   <div class="cards" id="cards"></div>
   <div class="charts" id="charts">
-    <div class="chart-box"><div class="section-title">Median External Link %</div><div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div></div>
-    <div class="chart-box"><div class="section-title">External Link Distribution</div><div class="chart-canvas-wrap"><canvas id="chart-hist"></canvas></div></div>
+    <div class="chart-box"><div class="section-title">Median External Link Percentage</div><div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div></div>
+    <div class="chart-box"><div class="section-title">Distribution of External Link Percentage</div><div class="chart-canvas-wrap"><canvas id="chart-hist"></canvas></div></div>
   </div>
   <div class="section-title">Browse domains (CC WAT scale study)</div>
   <div class="controls">
     <input id="search" type="text" placeholder="Search domain…">
     <select id="year-filter"><option value="">All years</option><option value="2014">2014</option><option value="2020">2020</option><option value="2024">2024</option></select>
-    <select id="min-ext"><option value="0">All ext%</option><option value="20">≥20%</option><option value="50">≥50%</option></select>
+    <select id="min-ext"><option value="0">All sites</option><option value="20">≥20% external</option><option value="50">≥50% external</option></select>
   </div>
   <div class="table-wrap"><table id="table"><thead><tr>
     <th data-col="domain">Domain</th><th data-col="year">Year</th>
     <th data-col="total_links" class="num">Links</th>
-    <th data-col="ext_pct" class="num">Ext%</th>
-    <th data-col="genuine_ext_pct" class="num">Genuine Ext%</th>
+    <th data-col="ext_pct" class="num">External links</th>
+    <th data-col="genuine_ext_pct" class="num">External (excl. same org)</th>
   </tr></thead><tbody id="tbody"></tbody></table></div>
 
   <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
@@ -83,7 +83,7 @@ input{flex:1;min-width:120px}
     <select id="yoy-sort"><option value="delta">Biggest decline</option><option value="delta-asc">Biggest increase</option><option value="domain">Domain A-Z</option></select>
   </div>
   <div class="table-wrap"><table id="yoy-table"><thead><tr>
-    <th>Domain</th><th class="num">2014 ext%</th><th class="num">2020 ext%</th><th class="num">2024 ext%</th><th class="num">Δ 2014→24</th><th class="num">2014 links</th><th class="num">2024 links</th><th>Archive</th>
+    <th>Domain</th><th class="num">2014 external</th><th class="num">2020 external</th><th class="num">2024 external</th><th class="num">Change</th><th class="num">2014 links</th><th class="num">2024 links</th><th>Archive</th>
   </tr></thead><tbody id="yoy-tbody"></tbody></table></div>
   <div class="pager">
     <button id="yoy-prev">← Prev</button>
@@ -132,10 +132,10 @@ function renderCards(){
   }
   let html='';
   const labels=[
-    ['Median Ext%','medExt','%'],
-    ['Median Genuine Ext%','medGen','%'],
-    ['Domains ≥50% Ext','ge50','%'],
-    ['Median Total Links','medLinks','']
+    ['Median External Links','medExt','%'],
+    ['Median External (excl. same org)','medGen','%'],
+    ['Sites with ≥50% External Links','ge50','%'],
+    ['Median Total Links per Page','medLinks','']
   ];
   for(const [label,key,unit] of labels){
     html+=`<div class="card"><div class="label">${label}</div>`;
@@ -162,8 +162,8 @@ function renderCharts(){
   // Trend bar chart
   const trendData=years.map(yr=>{const rows=q('SELECT ext_pct,genuine_ext_pct FROM cc_wat WHERE year=?',[yr]);return {ext:median(rows.map(r=>r.ext_pct)),gen:median(rows.map(r=>r.genuine_ext_pct))};});
   new Chart(document.getElementById('chart-trend'),{type:'bar',data:{labels:years.map(String),datasets:[
-    {label:'Raw ext%',data:trendData.map(d=>d.ext),backgroundColor:colors[0]+'aa',borderColor:colors[0],borderWidth:1,borderRadius:4},
-    {label:'Genuine ext% (excl same-org)',data:trendData.map(d=>d.gen),backgroundColor:colors[1]+'aa',borderColor:colors[1],borderWidth:1,borderRadius:4}
+    {label:'All external links',data:trendData.map(d=>d.ext),backgroundColor:colors[0]+'aa',borderColor:colors[0],borderWidth:1,borderRadius:4},
+    {label:'Excluding same-org links (e.g. bbc.com↔bbc.co.uk)',data:trendData.map(d=>d.gen),backgroundColor:colors[1]+'aa',borderColor:colors[1],borderWidth:1,borderRadius:4}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:gridColor}},x:{grid:{display:false}}}}});
 
   // Histogram (distribution of ext%)
