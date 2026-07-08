@@ -106,6 +106,12 @@ input{flex:1;min-width:120px}
     <span id="yoy-page-info"></span>
     <button id="yoy-next">Next →</button>
   </div>
+
+<div style="text-align:center;font-size:.7rem;color:var(--muted);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
+  Data version: <span id="data-version">v1</span> · 
+  <a href="#" id="refresh-data">Check for updates</a> · 
+  <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">Source</a>
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
@@ -113,33 +119,74 @@ input{flex:1;min-width:120px}
 <script>
 let db, page=0, perPage=50, sortCol='ext_pct', sortDir='desc';
 
-async function init(){
+const DB_VERSION='v1'; // bump when DB content changes
+
+// ── Service Worker + consent flow ──
+async function initSW(){
+  if(!('serviceWorker' in navigator)) return;
   try {
-    document.getElementById('loading').textContent = 'Loading SQLite engine…';
+    await navigator.serviceWorker.register('sw.js');
+    // Check if DB is already cached
+    const cached = await new Promise(resolve => {
+      const ch = new MessageChannel();
+      ch.port1.onmessage = e => resolve(e.data.cached);
+      navigator.serviceWorker.controller?.postMessage({type:'DB_CACHE_STATUS'}, [ch.port2]);
+    });
+    if(cached){
+      document.getElementById('consent-status').textContent='Database already cached from a previous visit.';
+    }
+  } catch(e){ console.warn('SW failed:', e); }
+}
+
+async function init(){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('consent').style.display='block';
+  await initSW();
+}
+
+document.getElementById('consent-yes').addEventListener('click', async () => {
+  document.getElementById('consent').style.display='none';
+  const loading = document.getElementById('loading');
+  loading.style.display='block';
+  try {
+    loading.textContent = 'Loading SQLite engine…';
     const SQL = await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
-    document.getElementById('loading').textContent = 'Loading database (14MB)…';
+    loading.textContent = 'Loading database (14MB)…';
     const resp = await fetch('link-study.db');
     if(!resp.ok) throw new Error('DB fetch failed: HTTP '+resp.status);
     const buf = await resp.arrayBuffer();
-    document.getElementById('loading').textContent = 'Parsing database…';
+    loading.textContent = 'Parsing database…';
     db = new SQL.Database(new Uint8Array(buf));
-    document.getElementById('loading').textContent = 'Rendering…';
-    document.getElementById('loading').style.display='none';
+    loading.textContent = 'Rendering…';
+    loading.style.display='none';
     document.getElementById('app').style.display='block';
-    // Defer rendering to allow paint
     setTimeout(()=>{
-    renderCards();
-    renderCharts();
-    renderTable();
-    renderVerdicts();
-    renderYoY();
+      renderCards();
+      renderCharts();
+      renderTable();
+      renderVerdicts();
+      renderYoY();
     },50);
   } catch(e) {
-    document.getElementById('loading').textContent = 'Error: ' + e.message + ' (check console for details)';
-    document.getElementById('loading').style.color = 'var(--bad)';
+    loading.textContent = 'Error: ' + e.message;
+    loading.style.color = 'var(--bad)';
     console.error('init error:', e);
   }
-}
+});
+
+document.getElementById('consent-no').addEventListener('click', () => {
+  document.getElementById('consent').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('loading').textContent = 'Data not loaded. Refresh and click "Load data" to explore.';
+});
+
+document.getElementById('refresh-data').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if(!navigator.serviceWorker.controller) return alert('Service worker not active.');
+  navigator.serviceWorker.controller.postMessage({type:'DB_CACHE_CLEAR'});
+  alert('Cache cleared. Reloading…');
+  location.reload();
+});
 
 function q(sql, params=[]){
   const stmt = db.prepare(sql); stmt.bind(params); const rows=[];
@@ -287,7 +334,7 @@ function renderVerdicts(){
 document.getElementById('v-search').addEventListener('input',()=>renderVerdicts());
 document.getElementById('v-filter').addEventListener('change',()=>renderVerdicts());
 
-init().catch(e=>{document.getElementById('loading').textContent='Fatal: '+e.message;console.error('fatal:',e);});
+init();
 
 // ── Y/Y comparison ──
 let yoyPage=0, yoyPerPage=50;
