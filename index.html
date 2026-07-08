@@ -58,7 +58,13 @@ input{flex:1;min-width:120px}
   </div>
 </div>
 
-<div id="loading" class="loading">Loading database (13MB)…</div>
+<div id="loading" class="loading" style="display:none">Loading…</div>
+<div id="consent" style="text-align:center;padding:2rem">
+  <p style="font-size:.9rem;margin-bottom:1rem">This site loads a 14MB SQLite database (306K domains) in your browser. Download once — cached for future visits.</p>
+  <p id="consent-status" style="font-size:.75rem;color:var(--muted);margin-bottom:1rem"></p>
+  <button id="consent-yes" style="padding:.6rem 1.5rem;font-size:.9rem;border:none;background:var(--accent);color:#fff;border-radius:.4rem;cursor:pointer">Load data (14MB)</button>
+  <button id="consent-no" style="padding:.6rem 1.5rem;font-size:.9rem;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:.4rem;cursor:pointer;margin-left:.5rem">No thanks</button>
+</div>
 <div id="app" style="display:none">
   <div class="cards" id="cards"></div>
   <div class="charts" id="charts">
