@@ -126,11 +126,14 @@ async function init(){
     document.getElementById('loading').textContent = 'Rendering…';
     document.getElementById('loading').style.display='none';
     document.getElementById('app').style.display='block';
+    // Defer rendering to allow paint
+    setTimeout(()=>{
     renderCards();
     renderCharts();
     renderTable();
     renderVerdicts();
     renderYoY();
+    },50);
   } catch(e) {
     document.getElementById('loading').textContent = 'Error: ' + e.message + ' (check console for details)';
     document.getElementById('loading').style.color = 'var(--bad)';
