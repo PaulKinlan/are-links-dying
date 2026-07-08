@@ -97,7 +97,7 @@ input{flex:1;min-width:120px}
     <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
   </div>
   <div class="table-wrap"><table id="v-table"><thead><tr>
-    <th>Site</th><th class="num">2014 external</th><th class="num">2024 external</th><th class="num">Change</th><th>Verdict</th><th>Evidence</th>
+    <th>Site</th><th class="num">2014 external</th><th class="num">2024 external</th><th class="num">Change</th><th class="num">2014 links (ext/total)</th><th class="num">2024 links (ext/total)</th><th>Verdict</th><th>Evidence</th>
   </tr></thead><tbody id="v-tbody"></tbody></table></div>
 
   <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
@@ -319,6 +319,13 @@ function renderVerdicts(){
     const e24=r.y2024_ext_pct!==null?r.y2024_ext_pct+'%':'—';
     const d=r.delta!==null?(r.delta>0?'+':'')+r.delta+'pp':'';
     const dc=r.delta<0?'bad':r.delta>0?'good':'';
+    const l14=r.y2014_total!==null?(r.y2014_total-(r.y2014_total-Math.round(r.y2014_total*r.y2014_ext_pct/100)))+'/'+r.y2014_total:'—';
+    const l24=r.y2024_total!==null?(r.y2024_total-(r.y2024_total-Math.round(r.y2024_total*r.y2024_ext_pct/100)))+'/'+r.y2024_total:'—';
+    // Simpler: ext count = round(total * pct/100)
+    const ext14=r.y2014_total!==null&&r.y2014_ext_pct!==null?Math.round(r.y2014_total*r.y2014_ext_pct/100):null;
+    const ext24=r.y2024_total!==null&&r.y2024_ext_pct!==null?Math.round(r.y2024_total*r.y2024_ext_pct/100):null;
+    const lk14=ext14!==null?ext14+'/'+r.y2014_total:'—';
+    const lk24=ext24!==null?ext24+'/'+r.y2024_total:'—';
     // Evidence links
     let ev='';
     if(r.wayback_2014)ev+=`<a href="${r.wayback_2014}" target="_blank">2014</a> `;
@@ -334,7 +341,7 @@ function renderVerdicts(){
       if(s24.length){ev+='<b>2024 samples:</b> '+s24.slice(0,5).join(', ')}
       ev+='</div>';
     }
-    html+=`<tr><td>${r.domain}</td><td class="num">${e14}</td><td class="num">${e24}</td><td class="num ${dc}">${d}</td><td>${r.verdict}</td><td style="font-size:.7rem">${ev}</td></tr>`;
+    html+=`<tr><td>${r.domain}</td><td class="num">${e14}</td><td class="num">${e24}</td><td class="num ${dc}">${d}</td><td class="num">${lk14}</td><td class="num">${lk24}</td><td>${r.verdict}</td><td style="font-size:.7rem">${ev}</td></tr>`;
   }
   document.getElementById('v-tbody').innerHTML=html;
 }
