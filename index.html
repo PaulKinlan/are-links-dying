@@ -62,10 +62,19 @@ input{flex:1;min-width:120px}
     <th data-col="ext_pct" class="num">Ext%</th>
     <th data-col="genuine_ext_pct" class="num">Genuine Ext%</th>
   </tr></thead><tbody id="tbody"></tbody></table></div>
+
+  <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024)</div>
+  <div class="controls">
+    <input id="yoy-search" type="text" placeholder="Search domain…">
+    <select id="yoy-sort"><option value="delta">Biggest decline</option><option value="delta-asc">Biggest increase</option><option value="domain">Domain A-Z</option></select>
+  </div>
+  <div class="table-wrap"><table id="yoy-table"><thead><tr>
+    <th>Domain</th><th class="num">2014 ext%</th><th class="num">2020 ext%</th><th class="num">2024 ext%</th><th class="num">Δ 2014→24</th><th class="num">2014 links</th><th class="num">2024 links</th><th>Archive</th>
+  </tr></thead><tbody id="yoy-tbody"></tbody></table></div>
   <div class="pager">
-    <button id="prev">← Prev</button>
-    <span id="page-info"></span>
-    <button id="next">Next →</button>
+    <button id="yoy-prev">← Prev</button>
+    <span id="yoy-page-info"></span>
+    <button id="yoy-next">Next →</button>
   </div>
 </div>
 
@@ -86,6 +95,7 @@ async function init(){
   renderCards();
   renderCharts();
   renderTable();
+  renderYoY();
 }
 
 function q(sql, params=[]){
@@ -196,6 +206,43 @@ document.querySelectorAll('th[data-col]').forEach(th=>{
 });
 
 init().catch(e=>{document.getElementById('loading').textContent='Error loading database: '+e.message;});
+
+// ── Y/Y comparison ──
+let yoyPage=0, yoyPerPage=50;
+function renderYoY(){
+  const search=document.getElementById('yoy-search').value;
+  const sortSel=document.getElementById('yoy-sort').value;
+  let sql='SELECT * FROM yoy_comparison';
+  let params=[];
+  if(search){sql+=' WHERE domain LIKE ?';params.push('%'+search+'%');}
+  if(sortSel==='delta')sql+=' ORDER BY delta ASC';
+  else if(sortSel==='delta-asc')sql+=' ORDER BY delta DESC';
+  else sql+=' ORDER BY domain ASC';
+  const total=q(`SELECT COUNT(*) as c FROM yoy_comparison ${search?'WHERE domain LIKE ?':''}`,search?[params[0]]:[])[0].c;
+  sql+=' LIMIT ? OFFSET ?';
+  params.push(yoyPerPage, yoyPage*yoyPerPage);
+  const rows=q(sql,params);
+  let html='';
+  for(const r of rows){
+    const d2014=r.y2014_ext_pct!==null?r.y2014_ext_pct+'%':'—';
+    const d2020=r.y2020_ext_pct!==null?r.y2020_ext_pct+'%':'—';
+    const d2024=r.y2024_ext_pct!==null?r.y2024_ext_pct+'%':'—';
+    const delta=r.delta!==null?(r.delta>0?'+':'')+r.delta+'pp':'';
+    const dClass=r.delta<0?'bad':r.delta>0?'good':'';
+    const wb14=r.y2014_ext_pct!==null?`<a href="https://web.archive.org/web/2014/${r.domain.startsWith('http')?r.domain:'http://'+r.domain}" target="_blank">2014</a>`:'';
+    const wb24=r.y2024_ext_pct!==null?`<a href="https://web.archive.org/web/2024/${r.domain.startsWith('http')?r.domain:'http://'+r.domain}" target="_blank">2024</a>`:'';
+    html+=`<tr><td>${r.domain}</td><td class="num">${d2014}</td><td class="num">${d2020}</td><td class="num">${d2024}</td><td class="num ${dClass}">${delta}</td><td class="num">${r.y2014_total||'—'}</td><td class="num">${r.y2024_total||'—'}</td><td>${wb14} ${wb24}</td></tr>`;
+  }
+  document.getElementById('yoy-tbody').innerHTML=html;
+  const off=yoyPage*yoyPerPage;
+  document.getElementById('yoy-page-info').textContent=`${off+1}-${Math.min(off+yoyPerPage,total)} of ${total.toLocaleString()}`;
+  document.getElementById('yoy-prev').disabled=yoyPage===0;
+  document.getElementById('yoy-next').disabled=off+yoyPerPage>=total;
+}
+document.getElementById('yoy-search').addEventListener('input',()=>{yoyPage=0;renderYoY();});
+document.getElementById('yoy-sort').addEventListener('change',()=>{yoyPage=0;renderYoY();});
+document.getElementById('yoy-prev').addEventListener('click',()=>{if(yoyPage>0){yoyPage--;renderYoY();}});
+document.getElementById('yoy-next').addEventListener('click',()=>{yoyPage++;renderYoY();});
 </script>
 </body>
 </html>
