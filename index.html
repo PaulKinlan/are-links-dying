@@ -149,16 +149,34 @@ if('serviceWorker' in navigator){
 }
 
 const DB_VERSION='v2';
+const VERSION_URL='version.json';
 
-async function checkCache(){
-  if('caches' in window){
-    try{
-      const cache = await caches.open('are-links-dying-db-v2');
-      const match = await cache.match(new Request(location.origin + '/link-study.db'));
-      return !!match;
-    }catch(e){ return false; }
+// Check if the user has already consented AND the cached DB version matches
+async function shouldSkipConsent(){
+  try {
+    // 1. Check localStorage for consent + version
+    const stored = localStorage.getItem('ald-consent');
+    if(!stored) return false;
+    const storedVersion = JSON.parse(stored).version;
+    
+    // 2. Fetch the tiny version manifest (a few bytes, not 14MB)
+    const resp = await fetch(VERSION_URL, {cache:'no-cache'});
+    if(!resp.ok) return storedVersion === DB_VERSION; // fall back to hardcoded version
+    const manifest = await resp.json();
+    
+    // 3. If the server version matches what we cached, skip consent
+    if(manifest.version === storedVersion){
+      // Also verify the DB is actually in the cache
+      if('caches' in window){
+        const cache = await caches.open('are-links-dying-db-v2');
+        const match = await cache.match(new Request(location.origin + '/link-study.db'));
+        return !!match;
+      }
+    }
+    return false;
+  } catch(e){
+    return false;
   }
-  return false;
 }
 
 async function loadDatabase(){
@@ -175,6 +193,8 @@ async function loadDatabase(){
     loading.textContent = 'Rendering…';
     loading.style.display='none';
     document.getElementById('app').style.display='block';
+    // Store consent + version so we don't re-fetch next visit
+    localStorage.setItem('ald-consent', JSON.stringify({version: DB_VERSION, date: new Date().toISOString()}));
     setTimeout(()=>{
       loadState();
       renderCards();
@@ -199,15 +219,14 @@ async function init(){
     try { await navigator.serviceWorker.register('sw.js'); } catch(e){ console.warn('SW reg failed:', e); }
   }
   
-  // Check if DB is already cached
-  const cached = await checkCache();
-  if(cached){
-    // Auto-load from cache, no consent needed
+  // Check if we can skip consent (user already consented + version matches + DB in cache)
+  const skip = await shouldSkipConsent();
+  if(skip){
     loading.style.display = 'block';
     loading.textContent = 'Loading cached data…';
     await loadDatabase();
   } else {
-    // Show consent dialog for first visit
+    // Show consent dialog
     document.getElementById('consent').style.display = 'block';
   }
 }
@@ -458,6 +477,8 @@ document.getElementById('consent-no').addEventListener('click', () => {
 });
 document.getElementById('refresh-data').addEventListener('click', async (e) => {
   e.preventDefault();
+  // Clear localStorage consent so next visit shows consent dialog
+  localStorage.removeItem('ald-consent');
   if('caches' in window){
     await caches.delete('are-links-dying-db-v2');
     await caches.delete('are-links-dying-v2');
