@@ -61,7 +61,13 @@ a{color:var(--accent)}
   </div>
 </div>
 
-<div id="loading" class="loading">Loading database (14MB)…</div>
+<div id="loading" class="loading">Loading…</div>
+<div id="consent" style="display:none;text-align:center;padding:2rem">
+  <p style="font-size:.9rem;margin-bottom:1rem">This site loads a 14MB SQLite database (1,000 sites × link analysis) entirely in your browser. Download once — cached for future visits.</p>
+  <p id="consent-status" style="font-size:.75rem;color:var(--muted);margin-bottom:1rem"></p>
+  <button id="consent-yes" style="padding:.6rem 1.5rem;font-size:.9rem;border:none;background:var(--accent);color:#fff;border-radius:.4rem;cursor:pointer">Load data (14MB)</button>
+  <button id="consent-no" style="padding:.6rem 1.5rem;font-size:.9rem;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:.4rem;cursor:pointer;margin-left:.5rem">No thanks</button>
+</div>
 <div id="app" style="display:none">
   <div class="cards" id="cards"></div>
   <div class="charts" id="charts">
@@ -124,9 +130,10 @@ a{color:var(--accent)}
   </div>
 
   <div style="text-align:center;font-size:.7rem;color:var(--muted);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
-    Data version: <span id="data-version">v2</span> · 
-    <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">Source</a>
-  </div>
+  Data version: <span id="data-version">v2</span> · 
+  <a href="#" id="refresh-data">Check for updates</a> · 
+  <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">Source</a>
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
@@ -136,16 +143,31 @@ let db, page=0, perPage=50, sortCol='ext_pct', sortDir='desc';
 let yoyPage=0, yoyPerPage=50;
 let vSortCol='delta', vSortDir='ASC';
 
-// Unregister any stale service workers
-if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));}
+// Unregister any stale v1 service workers, register v2
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>{if(r.active&&r.active.scriptURL.endsWith('sw.js')){/* keep */}else{r.unregister()}}));
+}
 
-async function init(){
+const DB_VERSION='v2';
+
+async function checkCache(){
+  if('caches' in window){
+    try{
+      const cache = await caches.open('are-links-dying-db-v2');
+      const match = await cache.match(new Request(location.origin + '/link-study.db'));
+      return !!match;
+    }catch(e){ return false; }
+  }
+  return false;
+}
+
+async function loadDatabase(){
   const loading = document.getElementById('loading');
   try {
     loading.textContent = 'Loading SQLite engine…';
     const SQL = await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
     loading.textContent = 'Loading database (14MB)…';
-    const resp = await fetch('link-study.db', {cache:'no-store'});
+    const resp = await fetch('link-study.db');
     if(!resp.ok) throw new Error('DB fetch failed: HTTP '+resp.status);
     const buf = await resp.arrayBuffer();
     loading.textContent = 'Parsing database…';
@@ -165,6 +187,28 @@ async function init(){
     loading.textContent = 'Error: ' + e.message;
     loading.style.color = 'var(--bad)';
     console.error('init error:', e);
+  }
+}
+
+async function init(){
+  const loading = document.getElementById('loading');
+  loading.style.display = 'none';
+  
+  // Register the service worker
+  if('serviceWorker' in navigator){
+    try { await navigator.serviceWorker.register('sw.js'); } catch(e){ console.warn('SW reg failed:', e); }
+  }
+  
+  // Check if DB is already cached
+  const cached = await checkCache();
+  if(cached){
+    // Auto-load from cache, no consent needed
+    loading.style.display = 'block';
+    loading.textContent = 'Loading cached data…';
+    await loadDatabase();
+  } else {
+    // Show consent dialog for first visit
+    document.getElementById('consent').style.display = 'block';
   }
 }
 
@@ -398,6 +442,28 @@ function shareView(e){e.preventDefault();saveState();const url=location.href;nav
 document.getElementById('share-v')?.addEventListener('click',shareView);
 document.getElementById('share-b')?.addEventListener('click',shareView);
 document.getElementById('share-y')?.addEventListener('click',shareView);
+
+// Consent buttons
+document.getElementById('consent-yes').addEventListener('click', async () => {
+  document.getElementById('consent').style.display='none';
+  const loading = document.getElementById('loading');
+  loading.style.display='block';
+  await loadDatabase();
+});
+document.getElementById('consent-no').addEventListener('click', () => {
+  document.getElementById('consent').style.display='none';
+  const loading = document.getElementById('loading');
+  loading.style.display='block';
+  loading.textContent = 'Data not loaded. Refresh and click "Load data" to explore.';
+});
+document.getElementById('refresh-data').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if('caches' in window){
+    await caches.delete('are-links-dying-db-v2');
+    await caches.delete('are-links-dying-v2');
+  }
+  location.reload();
+});
 
 init();
 </script>
