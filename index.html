@@ -37,42 +37,39 @@ input{flex:1;min-width:120px}
 .chart-explain{font-size:.7rem;color:var(--muted);line-height:1.4;margin-bottom:.4rem}
 .chart-canvas-wrap{flex:1;min-height:0;position:relative}
 .chart-canvas-wrap canvas{position:absolute;inset:0}
-@media(min-width:768px){.charts{grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem}.chart-box{padding:1rem;height:380px}.body{padding:1.5rem}.tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.table-section{min-width:0}}
+.tables-grid{display:grid;grid-template-columns:1fr;gap:.6rem;margin-bottom:1rem}
+@media(min-width:768px){.charts{grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:1rem}.chart-box{padding:1rem;height:380px}.tables-grid{grid-template-columns:1fr 1fr;gap:1rem}.table-section{min-width:0}}
+a{color:var(--accent)}
 </style>
 </head>
 <body>
 <h1>Are Links Dying?</h1>
 <p class="sub">The web was built on pages linking to each other. But publishers increasingly link inward — to their own articles, their own apps, their own gardens — rather than outward to sources, other sites, or the wider web. This study measures that shift: what percentage of links on a typical page point to a <b>different website</b>, and how has that changed over the past decade?</p>
-<p class="sub">Data: Common Crawl (306K sites) + detailed per-site analysis (170 sites, via web archive), 2014 → 2020 → 2024. <a href="#" id="about-link">About</a></p>
+<p class="sub">Data: Common Crawl (306K sites) + detailed per-site analysis (1,000 top sites, via web archive), 2014 → 2020 → 2024. <a href="#" id="about-link">About</a></p>
 
 <div id="about-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;padding:1rem" onclick="if(event.target===this)this.style.display='none'">
   <div style="max-width:500px;margin:auto;background:var(--card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:2rem">
     <h2 style="font-size:1.1rem;margin-bottom:.5rem">About this study</h2>
     <p style="font-size:.8rem;color:var(--muted);line-height:1.6">
-      <b>Data sources:</b> Common Crawl WAT files (306K domain-year pairs across 2014, 2020, 2024) + Wayback Machine deep-dive (170 curated domains with per-domain link analysis).<br><br>
+      <b>Data sources:</b> Common Crawl WAT files (306K domain-year pairs across 2014, 2020, 2024) + Wayback Machine deep-dive (1,000 top sites with per-site link analysis).<br><br>
       <b>Method:</b> For each page, all <code>&lt;a href&gt;</code> links in the raw HTML are classified as internal (same registrable domain) or external (different domain). External links are further split into social media (Twitter, Facebook, etc.) and genuine editorial links (excluding same-organisation cross-domain links like bbc.com ↔ bbc.co.uk). Domain classification uses the Public Suffix List (tldextract).<br><br>
       <b>SPA detection:</b> Pages with <300 characters of visible text in the raw HTML are flagged as potential JavaScript-rendered shells (links may exist but are invisible to crawlers).<br><br>
-      <b>Limitations:</b> CC WAT captures are point-in-time snapshots; results may vary by capture date. The random sample does not cover all websites. JS-rendered pages are underrepresented in link counts.<br><br>
+      <b>Limitations:</b> Web archive captures are point-in-time snapshots; results may vary by capture date. The random sample does not cover all websites. JS-rendered pages are underrepresented in link counts.<br><br>
       <b>Code &amp; data:</b> <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">GitHub</a> · <a href="https://paulkinlan.me" target="_blank">paulkinlan.me</a>
     </p>
     <button onclick="document.getElementById('about-modal').style.display='none'" style="margin-top:1rem;padding:.4rem 1rem;border:1px solid var(--border);border-radius:.4rem;background:var(--card);color:var(--text);cursor:pointer;font:inherit">Close</button>
   </div>
 </div>
 
-<div id="loading" class="loading" style="display:none">Loading…</div>
-<div id="consent" style="text-align:center;padding:2rem">
-  <p style="font-size:.9rem;margin-bottom:1rem">This site loads a 14MB SQLite database (306K domains) in your browser. Download once — cached for future visits.</p>
-  <p id="consent-status" style="font-size:.75rem;color:var(--muted);margin-bottom:1rem"></p>
-  <button id="consent-yes" style="padding:.6rem 1.5rem;font-size:.9rem;border:none;background:var(--accent);color:#fff;border-radius:.4rem;cursor:pointer">Load data (14MB)</button>
-  <button id="consent-no" style="padding:.6rem 1.5rem;font-size:.9rem;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:.4rem;cursor:pointer;margin-left:.5rem">No thanks</button>
-</div>
+<div id="loading" class="loading">Loading database (14MB)…</div>
 <div id="app" style="display:none">
   <div class="cards" id="cards"></div>
   <div class="charts" id="charts">
     <div class="chart-box"><div class="section-title">Median External Link Percentage</div><div class="chart-explain">What % of links on a typical page point to a <b>different website</b>. Lower = fewer external links = more insular. Purple = all external links. Amber = excluding same-organisation links (e.g. bbc.com linking to bbc.co.uk counts as external but is the same org).</div><div class="chart-canvas-wrap"><canvas id="chart-trend"></canvas></div></div>
     <div class="chart-box"><div class="section-title">Distribution of External Link Percentage</div><div class="chart-explain">What % of <b>all sites</b> fall into each bucket. Each bar = the share of sites whose external-link ratio is in that range. Purple = 2014, Amber = 2020, Green = 2024. The left-shift over time means more sites now have fewer external links.</div><div class="chart-canvas-wrap"><canvas id="chart-hist"></canvas></div></div>
   </div>
-  <div class="section-title">Per-site verdicts (170 sites, detailed analysis) <a href="#" id="share-v" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
+
+  <div class="section-title">Per-site verdicts (1,000 top sites, detailed analysis) <a href="#" id="share-v" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
   <div class="controls">
     <input id="v-search" type="text" placeholder="Search site…">
     <select id="v-filter"><option value="">All verdicts</option><option value="decline">Genuine decline</option><option value="shell">Now a JS shell</option><option value="Restructure">Restructure</option><option value="Minor">Minor change</option></select>
@@ -89,108 +86,66 @@ input{flex:1;min-width:120px}
   </tr></thead><tbody id="v-tbody"></tbody></table></div>
 
   <div class="tables-grid">
-  <div class="table-section">
-  <div class="section-title">Browse domains (CC WAT scale study) <a href="#" id="share-b" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
-  <div class="controls">
-    <input id="search" type="text" placeholder="Search domain…">
-    <select id="year-filter"><option value="">All years</option><option value="2014">2014</option><option value="2020">2020</option><option value="2024">2024</option></select>
-    <select id="min-ext"><option value="0">All sites</option><option value="20">≥20% external</option><option value="50">≥50% external</option></select>
-  </div>
-  <div class="table-wrap"><table id="table"><thead><tr>
-    <th data-col="domain">Domain</th><th data-col="year">Year</th>
-    <th data-col="total_links" class="num">Links</th>
-    <th data-col="ext_pct" class="num">External links</th>
-    <th data-col="genuine_ext_pct" class="num">External (excl. same org)</th>
-  </tr></thead><tbody id="tbody"></tbody></table>
-  <div class="pager">
-    <button id="prev">← Prev</button>
-    <span id="page-info"></span>
-    <button id="next">Next →</button>
-  </div>
-</div>
+    <div class="table-section">
+      <div class="section-title">Browse domains (CC WAT scale study) <a href="#" id="share-b" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
+      <div class="controls">
+        <input id="search" type="text" placeholder="Search domain…">
+        <select id="year-filter"><option value="">All years</option><option value="2014">2014</option><option value="2020">2020</option><option value="2024">2024</option></select>
+        <select id="min-ext"><option value="0">All sites</option><option value="20">≥20% external</option><option value="50">≥50% external</option></select>
+      </div>
+      <div class="table-wrap"><table id="table"><thead><tr>
+        <th data-col="domain">Domain</th><th data-col="year">Year</th>
+        <th data-col="total_links" class="num">Links</th>
+        <th data-col="ext_pct" class="num">External links</th>
+        <th data-col="genuine_ext_pct" class="num">External (excl. same org)</th>
+      </tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="pager">
+        <button id="prev">← Prev</button>
+        <span id="page-info"></span>
+        <button id="next">Next →</button>
+      </div>
+    </div>
 
-  <div class="table-section">
-  <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024) <a href="#" id="share-y" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
-  <div class="controls">
-    <input id="yoy-search" type="text" placeholder="Search domain…">
-    <select id="yoy-sort"><option value="delta">Biggest decline</option><option value="delta-asc">Biggest increase</option><option value="domain">Domain A-Z</option></select>
-  </div>
-  <div class="table-wrap"><table id="yoy-table"><thead><tr>
-    <th>Domain</th><th class="num" style="text-align:right">2014<br>external</th><th class="num" style="text-align:right">2020<br>external</th><th class="num" style="text-align:right">2024<br>external</th><th class="num" style="text-align:right">Change</th><th class="num" style="text-align:right">2014<br>links</th><th class="num" style="text-align:right">2024<br>links</th><th>Archive</th>
-  </tr></thead><tbody id="yoy-tbody"></tbody></table></div>
-  <div class="pager">
-    <button id="yoy-prev">← Prev</button>
-    <span id="yoy-page-info"></span>
-    <button id="yoy-next">Next →</button>
+    <div class="table-section">
+      <div class="section-title">Year-over-year comparison (domains in both 2014 & 2024) <a href="#" id="share-y" style="font-size:.7rem;float:right;cursor:pointer">🔗 Share this view</a></div>
+      <div class="controls">
+        <input id="yoy-search" type="text" placeholder="Search domain…">
+        <select id="yoy-sort"><option value="delta">Biggest decline</option><option value="delta-asc">Biggest increase</option><option value="domain">Domain A-Z</option></select>
+      </div>
+      <div class="table-wrap"><table id="yoy-table"><thead><tr>
+        <th>Domain</th><th class="num" style="text-align:right">2014<br>external</th><th class="num" style="text-align:right">2020<br>external</th><th class="num" style="text-align:right">2024<br>external</th><th class="num" style="text-align:right">Change</th><th class="num" style="text-align:right">2014<br>links</th><th class="num" style="text-align:right">2024<br>links</th><th>Archive</th>
+      </tr></thead><tbody id="yoy-tbody"></tbody></table></div>
+      <div class="pager">
+        <button id="yoy-prev">← Prev</button>
+        <span id="yoy-page-info"></span>
+        <button id="yoy-next">Next →</button>
+      </div>
+    </div>
   </div>
 
+  <div style="text-align:center;font-size:.7rem;color:var(--muted);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
+    Data version: <span id="data-version">v2</span> · 
+    <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">Source</a>
   </div>
-  </div><!-- /tables-grid -->
-
-<div style="text-align:center;font-size:.7rem;color:var(--muted);margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
-  Data version: <span id="data-version">v1</span> · 
-  <a href="#" id="refresh-data">Check for updates</a> · 
-  <a href="https://github.com/PaulKinlan/are-links-dying" target="_blank">Source</a>
-</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 let db, page=0, perPage=50, sortCol='ext_pct', sortDir='desc';
+let yoyPage=0, yoyPerPage=50;
+let vSortCol='delta', vSortDir='ASC';
 
-const DB_VERSION='v1'; // bump when DB content changes
-
-// ── Service Worker + consent flow ──
-async function initSW(){
-  if(!('serviceWorker' in navigator)) return;
-  try {
-    const reg = await navigator.serviceWorker.register('sw.js');
-    // Wait for the SW to be active
-    if(reg.active && navigator.serviceWorker.controller){
-      // SW is controlling this page — check cache
-      const cached = await new Promise(resolve => {
-        const ch = new MessageChannel();
-        ch.port1.onmessage = e => resolve(e.data.cached);
-        navigator.serviceWorker.controller.postMessage({type:'DB_CACHE_STATUS'}, [ch.port2]);
-        setTimeout(()=>resolve(false), 2000); // timeout fallback
-      });
-      if(cached){
-        document.getElementById('consent').style.display='none';
-        document.getElementById('loading').style.display='block';
-        document.getElementById('loading').textContent='Loading cached data…';
-        await loadDatabase();
-        return;
-      }
-    }
-    // Also check Cache API directly (works even if SW just registered)
-    if('caches' in window){
-      const cache = await caches.open('are-links-dying-db-v1');
-      const match = await cache.match('link-study.db');
-      if(match){
-        document.getElementById('consent').style.display='none';
-        document.getElementById('loading').style.display='block';
-        document.getElementById('loading').textContent='Loading cached data…';
-        await loadDatabase();
-        return;
-      }
-    }
-  } catch(e){ console.warn('SW failed:', e); }
-}
+// Unregister any stale service workers
+if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));}
 
 async function init(){
-  document.getElementById('loading').style.display='none';
-  document.getElementById('consent').style.display='block';
-  await initSW();
-}
-
-async function loadDatabase(){
   const loading = document.getElementById('loading');
   try {
     loading.textContent = 'Loading SQLite engine…';
     const SQL = await initSqlJs({locateFile:f=>`https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${f}`});
     loading.textContent = 'Loading database (14MB)…';
-    const resp = await fetch('link-study.db');
+    const resp = await fetch('link-study.db', {cache:'no-store'});
     if(!resp.ok) throw new Error('DB fetch failed: HTTP '+resp.status);
     const buf = await resp.arrayBuffer();
     loading.textContent = 'Parsing database…';
@@ -213,27 +168,6 @@ async function loadDatabase(){
   }
 }
 
-document.getElementById('consent-yes').addEventListener('click', async () => {
-  document.getElementById('consent').style.display='none';
-  const loading = document.getElementById('loading');
-  loading.style.display='block';
-  await loadDatabase();
-});
-
-document.getElementById('consent-no').addEventListener('click', () => {
-  document.getElementById('consent').style.display='none';
-  document.getElementById('loading').style.display='block';
-  document.getElementById('loading').textContent = 'Data not loaded. Refresh and click "Load data" to explore.';
-});
-
-document.getElementById('refresh-data').addEventListener('click', async (e) => {
-  e.preventDefault();
-  if(!navigator.serviceWorker.controller) return alert('Service worker not active.');
-  navigator.serviceWorker.controller.postMessage({type:'DB_CACHE_CLEAR'});
-  alert('Cache cleared. Reloading…');
-  location.reload();
-});
-
 function q(sql, params=[]){
   const stmt = db.prepare(sql); stmt.bind(params); const rows=[];
   while(stmt.step()) rows.push(stmt.getAsObject());
@@ -241,6 +175,38 @@ function q(sql, params=[]){
 }
 
 function median(arr){ if(!arr.length) return 0; arr.sort((a,b)=>a-b); return arr[Math.floor(arr.length/2)]; }
+
+// ── URL state sync ──
+function saveState(){
+  const p=new URLSearchParams();
+  p.set('bs',document.getElementById('search').value);
+  p.set('by',document.getElementById('year-filter').value);
+  p.set('be',document.getElementById('min-ext').value);
+  p.set('bp',String(page));
+  p.set('bc',sortCol);p.set('bd',sortDir);
+  p.set('vs',document.getElementById('v-search').value);
+  p.set('vf',document.getElementById('v-filter').value);
+  p.set('vc',vSortCol);p.set('vd',vSortDir);
+  p.set('ys',document.getElementById('yoy-search').value);
+  p.set('yo',document.getElementById('yoy-sort').value);
+  p.set('yp',String(yoyPage));
+  history.replaceState(null,'','#'+p.toString());
+}
+function loadState(){
+  const h=location.hash.slice(1);if(!h)return;
+  const p=new URLSearchParams(h);
+  document.getElementById('search').value=p.get('bs')||'';
+  document.getElementById('year-filter').value=p.get('by')||'';
+  document.getElementById('min-ext').value=p.get('be')||'0';
+  page=parseInt(p.get('bp'))||0;
+  sortCol=p.get('bc')||'ext_pct';sortDir=p.get('bd')||'desc';
+  document.getElementById('v-search').value=p.get('vs')||'';
+  document.getElementById('v-filter').value=p.get('vf')||'';
+  vSortCol=p.get('vc')||'delta';vSortDir=p.get('vd')||'ASC';
+  document.getElementById('yoy-search').value=p.get('ys')||'';
+  document.getElementById('yoy-sort').value=p.get('yo')||'delta';
+  yoyPage=parseInt(p.get('yp'))||0;
+}
 
 function renderCards(){
   const years=[2014,2020,2024];
@@ -281,14 +247,12 @@ function renderCharts(){
   Chart.defaults.color=textColor;
   Chart.defaults.borderColor=gridColor;
 
-  // Trend bar chart
   const trendData=years.map(yr=>{const rows=q('SELECT ext_pct,genuine_ext_pct FROM cc_wat WHERE year=?',[yr]);return {ext:median(rows.map(r=>r.ext_pct)),gen:median(rows.map(r=>r.genuine_ext_pct))};});
   new Chart(document.getElementById('chart-trend'),{type:'bar',data:{labels:years.map(String),datasets:[
     {label:'All external links',data:trendData.map(d=>d.ext),backgroundColor:colors[0]+'aa',borderColor:colors[0],borderWidth:1,borderRadius:4},
     {label:'Excluding same-org links (e.g. bbc.com↔bbc.co.uk)',data:trendData.map(d=>d.gen),backgroundColor:colors[1]+'aa',borderColor:colors[1],borderWidth:1,borderRadius:4}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:gridColor}},x:{grid:{display:false}}}}});
 
-  // Histogram (distribution of ext%)
   const bins=[0,5,10,15,20,30,40,50,75,100];
   const binLabels=['0-5%','5-10%','10-15%','15-20%','20-30%','30-40%','40-50%','50-75%','75-100%'];
   const histData=years.map((yr,i)=>{
@@ -296,7 +260,7 @@ function renderCharts(){
     const counts=Array(bins.length-1).fill(0);
     for(const r of rows){for(let b=0;b<bins.length-1;b++){if(r.ext_pct>=bins[b]&&(b===bins.length-2||r.ext_pct<bins[b+1])){counts[b]++;break;}}}
     const total=rows.length;
-    return counts.map(c=> +(c/total*100).toFixed(1)); // percentage of domains
+    return counts.map(c=> +(c/total*100).toFixed(1));
   });
   new Chart(document.getElementById('chart-hist'),{type:'bar',data:{labels:binLabels,datasets:years.map((yr,i)=>({label:String(yr),data:histData[i],backgroundColor:colors[i]+'88',borderColor:colors[i],borderWidth:1,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:gridColor}},x:{grid:{display:false}}}}});
 }
@@ -305,8 +269,7 @@ function renderTable(){
   const search=document.getElementById('search').value;
   const yearF=document.getElementById('year-filter').value;
   const minExt=document.getElementById('min-ext').value;
-  let where=[];
-  let params=[];
+  let where=[];let params=[];
   if(search){where.push('domain LIKE ?');params.push('%'+search+'%');}
   if(yearF){where.push('year=?');params.push(parseInt(yearF));}
   if(minExt){where.push('ext_pct>=?');params.push(parseFloat(minExt));}
@@ -324,71 +287,9 @@ function renderTable(){
   document.getElementById('page-info').textContent=`${offset+1}-${Math.min(offset+perPage,total)} of ${total.toLocaleString()}`;
   document.getElementById('prev').disabled=page===0;
   document.getElementById('next').disabled=offset+perPage>=total;
+  saveState();
 }
 
-// Event listeners
-document.getElementById('search').addEventListener('input',()=>{page=0;renderTable();});
-document.getElementById('year-filter').addEventListener('change',()=>{page=0;renderTable();});
-document.getElementById('min-ext').addEventListener('change',()=>{page=0;renderTable();});
-document.getElementById('prev').addEventListener('click',()=>{if(page>0){page--;renderTable();}});
-document.getElementById('next').addEventListener('click',()=>{page++;renderTable();});
-document.querySelectorAll('th[data-col]').forEach(th=>{
-  th.addEventListener('click',()=>{
-    const col=th.dataset.col;
-    if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
-    else{sortCol=col;sortDir='asc';}
-    renderTable();
-  });
-});
-
-// ── URL state sync ──
-function saveState(){
-  const p=new URLSearchParams();
-  p.set('bs',document.getElementById('search').value);
-  p.set('by',document.getElementById('year-filter').value);
-  p.set('be',document.getElementById('min-ext').value);
-  p.set('bp',String(page));
-  p.set('bc',sortCol);p.set('bd',sortDir);
-  p.set('vs',document.getElementById('v-search').value);
-  p.set('vf',document.getElementById('v-filter').value);
-  p.set('vc',vSortCol);p.set('vd',vSortDir);
-  p.set('ys',document.getElementById('yoy-search').value);
-  p.set('yo',document.getElementById('yoy-sort').value);
-  p.set('yp',String(yoyPage));
-  history.replaceState(null,'','#'+p.toString());
-}
-function loadState(){
-  const h=location.hash.slice(1);if(!h)return;
-  const p=new URLSearchParams(h);
-  document.getElementById('search').value=p.get('bs')||'';
-  document.getElementById('year-filter').value=p.get('by')||'';
-  document.getElementById('min-ext').value=p.get('be')||'0';
-  page=parseInt(p.get('bp'))||0;
-  sortCol=p.get('bc')||'ext_pct';sortDir=p.get('bd')||'desc';
-  document.getElementById('v-search').value=p.get('vs')||'';
-  document.getElementById('v-filter').value=p.get('vf')||'';
-  vSortCol=p.get('vc')||'delta';vSortDir=p.get('vd')||'ASC';
-  document.getElementById('yoy-search').value=p.get('ys')||'';
-  document.getElementById('yoy-sort').value=p.get('yo')||'delta';
-  yoyPage=parseInt(p.get('yp'))||0;
-}
-
-// Wrap render functions to also save state
-const _rt=renderTable,_rv=renderVerdicts,_ry=renderYoY;
-renderTable=function(){_rt();saveState();};
-renderVerdicts=function(){_rv();saveState();};
-renderYoY=function(){_ry();saveState();};
-
-// Share buttons
-function shareView(e){e.preventDefault();saveState();const url=location.href;navigator.clipboard.writeText(url).then(()=>{const t=e.target;const orig=t.textContent;t.textContent='✓ Copied!';setTimeout(()=>t.textContent=orig,1500);}).catch(()=>{prompt('Copy this URL:',url);});}
-document.getElementById('share-v')?.addEventListener('click',shareView);
-document.getElementById('share-b')?.addEventListener('click',shareView);
-document.getElementById('share-y')?.addEventListener('click',shareView);
-
-document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
-
-// ── Verdicts ──
-let vSortCol='delta', vSortDir='ASC';
 function renderVerdicts(){
   const search=document.getElementById('v-search').value;
   const filt=document.getElementById('v-filter').value;
@@ -404,20 +305,15 @@ function renderVerdicts(){
     const e24=r.y2024_ext_pct!==null?r.y2024_ext_pct+'%':'—';
     const d=r.delta!==null?(r.delta>0?'+':'')+r.delta+'pp':'';
     const dc=r.delta<0?'bad':r.delta>0?'good':'';
-    const l14=r.y2014_total!==null?(r.y2014_total-(r.y2014_total-Math.round(r.y2014_total*r.y2014_ext_pct/100)))+'/'+r.y2014_total:'—';
-    const l24=r.y2024_total!==null?(r.y2024_total-(r.y2024_total-Math.round(r.y2024_total*r.y2024_ext_pct/100)))+'/'+r.y2024_total:'—';
-    // Simpler: ext count = round(total * pct/100)
     const ext14=r.y2014_total!==null&&r.y2014_ext_pct!==null?Math.round(r.y2014_total*r.y2014_ext_pct/100):null;
     const ext24=r.y2024_total!==null&&r.y2024_ext_pct!==null?Math.round(r.y2024_total*r.y2024_ext_pct/100):null;
     const int14=r.y2014_total!==null&&ext14!==null?r.y2014_total-ext14:null;
     const int24=r.y2024_total!==null&&ext24!==null?r.y2024_total-ext24:null;
     const lk14=ext14!==null?ext14+' ext / '+int14+' int<br><span style="font-size:.65rem;color:var(--muted)">'+r.y2014_total+' total</span>':'—';
     const lk24=ext24!==null?ext24+' ext / '+int24+' int<br><span style="font-size:.65rem;color:var(--muted)">'+r.y2024_total+' total</span>':'—';
-    // Evidence links
     let ev='';
     if(r.wayback_2014)ev+=`<a href="${r.wayback_2014}" target="_blank">2014</a> `;
     if(r.wayback_2024)ev+=`<a href="${r.wayback_2024}" target="_blank">2024</a>`;
-    // Expandable samples
     let s14='';try{s14=JSON.parse(r.y2014_ext_samples||'[]');}catch(e){}
     let s24='';try{s24=JSON.parse(r.y2024_ext_samples||'[]');}catch(e){}
     if(s14.length||s24.length){
@@ -431,23 +327,9 @@ function renderVerdicts(){
     html+=`<tr><td>${r.domain}</td><td class="num">${e14}</td><td class="num">${e24}</td><td class="num ${dc}">${d}</td><td class="num">${lk14}</td><td class="num">${lk24}</td><td>${r.verdict}</td><td style="font-size:.7rem">${ev}</td></tr>`;
   }
   document.getElementById('v-tbody').innerHTML=html;
+  saveState();
 }
-document.getElementById('v-search').addEventListener('input',()=>renderVerdicts());
-document.getElementById('v-filter').addEventListener('change',()=>renderVerdicts());
-document.querySelectorAll('th[data-vcol]').forEach(th=>{
-  th.addEventListener('click',()=>{
-    const col=th.dataset.vcol;
-    if(vSortCol===col) vSortDir=vSortDir==='ASC'?'DESC':'ASC';
-    else{vSortCol=col;vSortDir='ASC';}
-    renderVerdicts();
-  });
-  th.style.cursor='pointer';
-});
 
-init();
-
-// ── Y/Y comparison ──
-let yoyPage=0, yoyPerPage=50;
 function renderYoY(){
   const search=document.getElementById('yoy-search').value;
   const sortSel=document.getElementById('yoy-sort').value;
@@ -468,20 +350,56 @@ function renderYoY(){
     const d2024=r.y2024_ext_pct!==null?r.y2024_ext_pct+'%':'—';
     const delta=r.delta!==null?(r.delta>0?'+':'')+r.delta+'pp':'';
     const dClass=r.delta<0?'bad':r.delta>0?'good':'';
-    const wb14=r.y2014_ext_pct!==null?`<a href="https://web.archive.org/web/2014/${r.domain.startsWith('http')?r.domain:'http://'+r.domain}" target="_blank">2014</a>`:'';
-    const wb24=r.y2024_ext_pct!==null?`<a href="https://web.archive.org/web/2024/${r.domain.startsWith('http')?r.domain:'http://'+r.domain}" target="_blank">2024</a>`:'';
-    html+=`<tr><td>${r.domain}</td><td class="num">${d2014}</td><td class="num">${d2020}</td><td class="num">${d2024}</td><td class="num ${dClass}">${delta}</td><td class="num">${r.y2014_total||'—'}</td><td class="num">${r.y2024_total||'—'}</td><td>${wb14} ${wb24}</td></tr>`;
+    const wb14=r.y2014_ext_pct!==null?`<a href="https://web.archive.org/web/2014/http://${r.domain}" target="_blank">2014</a>`:'';
+    const wb24=r.y2024_ext_pct!==null?`<a href="https://web.archive.org/web/2024/http://${r.domain}" target="_blank">2024</a>`:'';
+    html+=`<tr><td>${r.domain}</td><td class="num">${d2014}</td><td class="num">${d2020}</td><td class="num">${d2024}</td><td class="num ${dClass}">${delta}</td><td class="num">${r.y2014_total||'—'}</td><td class="num">${r.y2024_total||'—'}</td><td style="font-size:.7rem">${wb14} ${wb24}</td></tr>`;
   }
   document.getElementById('yoy-tbody').innerHTML=html;
   const off=yoyPage*yoyPerPage;
   document.getElementById('yoy-page-info').textContent=`${off+1}-${Math.min(off+yoyPerPage,total)} of ${total.toLocaleString()}`;
   document.getElementById('yoy-prev').disabled=yoyPage===0;
   document.getElementById('yoy-next').disabled=off+yoyPerPage>=total;
+  saveState();
 }
+
+// Event listeners
+document.getElementById('search').addEventListener('input',()=>{page=0;renderTable();});
+document.getElementById('year-filter').addEventListener('change',()=>{page=0;renderTable();});
+document.getElementById('min-ext').addEventListener('change',()=>{page=0;renderTable();});
+document.getElementById('prev').addEventListener('click',()=>{if(page>0){page--;renderTable();}});
+document.getElementById('next').addEventListener('click',()=>{page++;renderTable();});
+document.querySelectorAll('th[data-col]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const col=th.dataset.col;
+    if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
+    else{sortCol=col;sortDir='asc';}
+    renderTable();
+  });
+});
+document.getElementById('about-link').addEventListener('click',(e)=>{e.preventDefault();document.getElementById('about-modal').style.display='block';});
+document.getElementById('v-search').addEventListener('input',()=>renderVerdicts());
+document.getElementById('v-filter').addEventListener('change',()=>renderVerdicts());
+document.querySelectorAll('th[data-vcol]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const col=th.dataset.vcol;
+    if(vSortCol===col) vSortDir=vSortDir==='ASC'?'DESC':'ASC';
+    else{vSortCol=col;vSortDir='ASC';}
+    renderVerdicts();
+  });
+  th.style.cursor='pointer';
+});
 document.getElementById('yoy-search').addEventListener('input',()=>{yoyPage=0;renderYoY();});
 document.getElementById('yoy-sort').addEventListener('change',()=>{yoyPage=0;renderYoY();});
 document.getElementById('yoy-prev').addEventListener('click',()=>{if(yoyPage>0){yoyPage--;renderYoY();}});
 document.getElementById('yoy-next').addEventListener('click',()=>{yoyPage++;renderYoY();});
+
+// Share buttons
+function shareView(e){e.preventDefault();saveState();const url=location.href;navigator.clipboard.writeText(url).then(()=>{const t=e.target;const orig=t.textContent;t.textContent='✓ Copied!';setTimeout(()=>t.textContent=orig,1500);}).catch(()=>{prompt('Copy this URL:',url);});}
+document.getElementById('share-v')?.addEventListener('click',shareView);
+document.getElementById('share-b')?.addEventListener('click',shareView);
+document.getElementById('share-y')?.addEventListener('click',shareView);
+
+init();
 </script>
 </body>
 </html>
